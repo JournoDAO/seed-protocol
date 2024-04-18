@@ -4,6 +4,8 @@ import '@nomicfoundation/hardhat-toolbox'
 import 'hardhat-ethernal'
 import '@openzeppelin/hardhat-upgrades'
 
+import dotenv from 'dotenv'
+dotenv.config()
 
 
 const config: HardhatUserConfig = {

@@ -38,6 +38,7 @@
     "@openzeppelin/contracts": "4.9.5",
     "@openzeppelin/contracts-upgradeable": "4.9.5",
     "@thirdweb-dev/contracts": "^3.11.0",
+    "dotenv": "^16.4.5",
     "hardhat-erc1820": "^0.1.0",
     "hardhat-ethernal": "^3.2.5",
     "merkletreejs": "^0.3.11",

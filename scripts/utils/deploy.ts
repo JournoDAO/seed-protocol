@@ -281,8 +281,8 @@ export const deployToLocalHardhat = async (): Promise<ValuesStore> => {
     postSchemaUid,
     versionSchemaUid,
     permaPress,
-    identitySeedUid,
-    postSeedUid,
+    identitySeedUid: `0x${identitySeedUid}`,
+    postSeedUid: `0x${postSeedUid}`,
     modelUids,
   }
 }

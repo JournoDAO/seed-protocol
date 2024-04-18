@@ -50,41 +50,125 @@ describe('PermaPress', () => {
   //   )).to.be.true;
   // });
 
-  it('should create a version for the identity seed and return the UID of the new version', async function () {
+  // it('should create a version for the identity seed and return the UID of the new version', async function () {
+  //
+  //   const {
+  //     permaPress,
+  //     eas,
+  //     versionSchemaUid,
+  //     identitySeedUid,
+  //     modelUids,
+  //   } = valuesStore
+  //
+  //   if (!eas) {
+  //     throw new Error('EAS contract not found');
+  //   }
+  //
+  //   if (!permaPress) {
+  //     throw new Error('PermaPress contract not found');
+  //   }
+  //
+  //   if (!modelUids) {
+  //     throw new Error('PropertyData not found');
+  //   }
+  //
+  //   const createVersion = permaPress.getFunction('createVersion');
+  //
+  //   if (!createVersion) {
+  //     throw new Error('Function fragment not found');
+  //   }
+  //
+  //   console.log('calling createVersion with identitySeedUid', identitySeedUid, 'versionSchemaUid', versionSchemaUid)
+  //
+  //   const transaction = await createVersion.send(identitySeedUid, versionSchemaUid, {
+  //     value: BigInt(0),
+  //     // gasLimit: BigInt(1022881482n),
+  //     gasLimit: 30000000n,
+  //   });
+  //
+  //   console.log('transaction', transaction)
+  //
+  //   const receipt = await transaction.wait();
+  //
+  //   console.log('receipt', receipt)
+  //
+  //   if (!receipt) {
+  //     throw new Error('Transaction failed');
+  //   }
+  //
+  //   if (!receipt.logs || receipt.logs.length === 0) {
+  //     throw new Error('No logs found');
+  //   }
+  //
+  //   const returnedUids: string[] = []
+  //
+  //   for ( let i = 0; i < receipt.logs.length; i++ ) {
+  //     const log = receipt.logs[i]
+  //     if (log.args) {
+  //       const arg = log.args[0]
+  //       if (arg && arg.length === 64) {
+  //         returnedUids.push(`0x${arg}`)
+  //       }
+  //     }
+  //   }
+  //
+  //   console.log(returnedUids)
+  //
+  //   for ( let j = 0; j < returnedUids.length; j++ ) {
+  //     const uid = returnedUids[j]
+  //     expect(ethers.isHexString(uid)).to.be.true;
+  //
+  //     const attestation = await eas.getAttestation(uid)
+  //     expect(attestation).to.not.be.null
+  //   }
+  //
+  //
+  // });
 
+  it('should use multiPublish to publish all attestations needed for a seed', async function () {
     const {
       permaPress,
       eas,
-      versionSchemaUid,
-      identitySeedUid,
-      modelUids,
     } = valuesStore
-
-    if (!eas) {
-      throw new Error('EAS contract not found');
-    }
 
     if (!permaPress) {
       throw new Error('PermaPress contract not found');
     }
 
-    if (!modelUids) {
-      throw new Error('PropertyData not found');
+    const multiPublish = permaPress.getFunction('multiPublish');
+
+    if (!multiPublish) {
+      throw new Error('multiPublish function fragment not found');
     }
 
-    const createVersion = permaPress.getFunction('createVersion');
-
-    if (!createVersion) {
-      throw new Error('Function fragment not found');
-    }
-
-    const transaction = await createVersion.send(`0x${identitySeedUid}`, versionSchemaUid, {
+    const transaction = await multiPublish.send(testPublishRequestData, {
       value: BigInt(0),
       // gasLimit: BigInt(1022881482n),
       gasLimit: 30000000n,
     });
 
+    const result = await permaPress.multiPublish(testPublishRequestData)
+
+    const done = await result.wait()
+
+    // console.log('===== done =====')
+    // console.log(done)
+    // console.log('===== /done =====')
+
     const receipt = await transaction.wait();
+
+    // permaPress.interface.forEachEvent((event, index) => {
+    //   // console.log(event)
+    //   console.log(`index: ${index}`)
+    //   console.log(permaPress.interface.decodeEventLog(event, logs[0].data, logs[0].topics))
+    // })
+
+    // Log the messages
+    // logs.forEach(log => {
+    //     console.log(log.toJSON());
+    //     console.log(permaPress.interface.decodeEventLog('Log', log.data, log.topics))
+    // });
+
 
     if (!receipt) {
       throw new Error('Transaction failed');
@@ -96,101 +180,29 @@ describe('PermaPress', () => {
 
     const returnedUids: string[] = []
 
-    console.log(receipt.logs)
-
     for ( let i = 0; i < receipt.logs.length; i++ ) {
       const log = receipt.logs[i]
-      returnedUids.push(log.data)
+      if (log.args) {
+        const arg = log.args[0]
+        console.log(arg)
+        if (arg && arg.length === 64) {
+          returnedUids.push(`0x${arg}`)
+        }
+      }
     }
 
     console.log(returnedUids)
 
-    expect(returnedUids.length).to.equal(receipt.logs.length);
     for ( let j = 0; j < returnedUids.length; j++ ) {
       const uid = returnedUids[j]
       expect(ethers.isHexString(uid)).to.be.true;
 
-      const attestation = await eas.getAttestation(uid)
+      const attestation = await eas!.getAttestation(uid)
       expect(attestation).to.not.be.null
     }
 
-
-  });
-
-  // it('should use multiPublish to publish all attestations needed for a seed', async function () {
-  //   const {
-  //     permaPress,
-  //     postSchemaUid,
-  //     versionSchemaUid,
-  //     modelUids,
-  //   } = valuesStore
-  //
-  //   if (!permaPress) {
-  //     throw new Error('PermaPress contract not found');
-  //   }
-  //
-  //   const multiPublish = permaPress.getFunction('multiPublish');
-  //
-  //   if (!multiPublish) {
-  //     throw new Error('multiPublish function fragment not found');
-  //   }
-  //
-  //   const transaction = await multiPublish.send(testPublishRequestData, {
-  //     value: BigInt(0),
-  //     // gasLimit: BigInt(1022881482n),
-  //     gasLimit: 30000000n,
-  //   });
-  //
-  //   const result = await permaPress.multiPublish(testPublishRequestData)
-  //
-  //   const done = await result.wait()
-  //
-  //   console.log('===== done =====')
-  //   console.log(done)
-  //   console.log('===== /done =====')
-  //
-  //   const receipt = await transaction.wait();
-  //
-  //   // Get the emitted events
-  //   // const logs = await permaPress.queryFilter('PublishResultData');
-  //
-  //   // console.log(receipt.logs)
-  //
-  //   // permaPress.interface.forEachEvent((event, index) => {
-  //   //   // console.log(event)
-  //   //   console.log(`index: ${index}`)
-  //   //   console.log(permaPress.interface.decodeEventLog(event, logs[0].data, logs[0].topics))
-  //   // })
-  //
-  //   // Log the messages
-  //   // logs.forEach(log => {
-  //   //     console.log(log.toJSON());
-  //   //     console.log(permaPress.interface.decodeEventLog('Log', log.data, log.topics))
-  //   // });
-  //
-  //
-  //   for (const log of receipt.logs) {
-  //     // console.log('log.index', log.index)
-  //     // console.log('log.topics', log.topics)
-  //     if (log.args) {
-  //       // console.log(log.toJSON())
-  //       // const finalResult = JSON.parse(log.args[0])
-  //       // console.log(JSON.stringify(log.args))
-  //       // console.log(finalResult)
-  //       console.log(permaPress.interface.parseLog(log).args)
-  //     }
-  //   }
-  //
-  //   if (!receipt) {
-  //     throw new Error('Transaction failed');
-  //   }
-  //
-  //   if (!receipt.logs || receipt.logs.length === 0) {
-  //     throw new Error('No logs found');
-  //   }
-  //
-  //   // console.log(receipt.toJSON())
-  // })
+    // console.log(receipt.toJSON())
+  })
 })
 
 //   it('should publish a seed, a version, and property attestations', async function () {

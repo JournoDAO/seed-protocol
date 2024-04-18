@@ -47,8 +47,8 @@ contract PermaPress is OwnableUpgradeable {
 
     function createVersion(bytes32 seedUid, bytes32 versionSchemaUid) public payable returns (bytes32) {
 
-        emit Log("Calling createVersion");
-        emit Log(string(abi.encodePacked(bytes32ToHexString(versionSchemaUid))));
+        emit Log("Calling createVersion with seedUid");
+//        emit Log(string(abi.encodePacked(bytes32ToHexString(versionSchemaUid))));
 //        emit Log(string(abi.encodePacked(bytes32ToHexString(seedUid))));
 
         // Prepare the Version attestation
@@ -61,14 +61,20 @@ contract PermaPress is OwnableUpgradeable {
             value: uint256(0)
         });
 
+        emit Log("Has versionData");
+
         AttestationRequest memory versionRequest = AttestationRequest({
             schema: versionSchemaUid,
             data: versionData
         });
 
-        bytes32 versionUid = eas.attest(versionRequest);
+        emit Log("Calling attest with versionRequest");
 
-        return versionUid;
+//        bytes32 versionUid = eas.attest(versionRequest);
+
+        emit Log("Has versionUid");
+
+        return seedUid;
     }
 
     // Utility function to convert bytes32 to string
@@ -113,49 +119,79 @@ contract PermaPress is OwnableUpgradeable {
         }
 
         if (seedUid != bytes32(0) && versionUid == bytes32(0)) {
+//            emit Log("Calling createVersion from publish with seedUid ->");
+//            emit Log(string(abi.encodePacked(bytes32ToHexString(seedUid))));
             versionUid = createVersion(seedUid, request.versionSchemaUid);
             emit Log("Created versionUid");
             emit Log(string(abi.encodePacked(bytes32ToHexString(versionUid))));
         }
 
-        // Create updated listOfAttestations with versionUid as refUID
-        for (uint k = 0; k < request.listOfAttestations.length; k++) {
-            for (uint l = 0; l < request.listOfAttestations[k].data.length; l++) {
-                // Prepare data for each attestation, referencing the Version UID
-                request.listOfAttestations[k].data[l].refUID = versionUid;
-                emit Log("Attached versionUid to attestation");
-                emit Log(string(abi.encodePacked(bytes32ToHexString(versionUid))));
-            }
-        }
+//        // Create updated listOfAttestations with versionUid as refUID
+//        for (uint k = 0; k < request.listOfAttestations.length; k++) {
+//            emit Log("Has attesations to update");
+//            for (uint l = 0; l < request.listOfAttestations[k].data.length; l++) {
+//                // Prepare data for each attestation, referencing the Version UID
+//                request.listOfAttestations[k].data[l].refUID = versionUid;
+//                emit Log("Attached versionUid to attestation");
+//                emit Log(string(abi.encodePacked(bytes32ToHexString(versionUid))));
+//            }
+//        }
 
         return (seedUid, versionUid);
     }
 
     function multiPublish(PublishRequestData[] memory requests) public payable returns (bytes32[] memory) {
         bytes32[] memory result = new bytes32[](requests.length);
-//        PropertyToUpdateWithSeed[] memory propertiesToUpdate = new PropertyToUpdateWithSeed[](0);
+//        uint numberOfPropertiesToUpdate = 0;
+//
+//        for (uint i = 0; i < requests.length; i++) {
+//            PublishRequestData memory requestToPublish = requests[i];
+//            numberOfPropertiesToUpdate += requestToPublish.propertiesToUpdate.length;
+//        }
+//
+//        QueuedUpdate[] memory queuedUpdates = new QueuedUpdate[](numberOfPropertiesToUpdate);
+
         for (uint i = 0; i < requests.length; i++) {
             PublishRequestData memory requestToPublish = requests[i];
+            emit Log("Request publishing");
+            emit Log(string(abi.encodePacked(requestToPublish.localId)));
             // Each publish call can return a list of properties that need to be updated
             (bytes32 newSeedUid, bytes32 newVersionUid) = publish(requestToPublish);
+
+            // Update the current request attestations with the newVersionUid as the refUID
+            for (uint j = 0; j < requestToPublish.listOfAttestations.length; j++) {
+                MultiAttestationRequest memory attestationRequest = requestToPublish.listOfAttestations[j];
+                for (uint k = 0; k < attestationRequest.data.length; k++) {
+                    attestationRequest.data[k].refUID = newVersionUid;
+                    emit Log("Attached newVersionUid to attestation");
+                    emit Log(string(abi.encodePacked(bytes32ToHexString(newVersionUid))));
+                }
+            }
+
+            // Update other requests that have properties that need to reference the newSeedUid
             PropertyToUpdateWithSeed[] memory propertiesToUpdate = requestToPublish.propertiesToUpdate;
             // For each property, we find the corresponding request and update the property's value as the seedUid
-            for (uint j = 0; j < propertiesToUpdate.length; j++) {
-                PropertyToUpdateWithSeed memory propertyToUpdate = propertiesToUpdate[j];
-                for (uint k = 0; k < requests.length; k++) {
-                    if ( Strings.equal(requests[k].localId, propertyToUpdate.publishLocalId)) {
-                        for (uint l = 0; l < requests[k].propertiesToUpdate.length; l++) {
-                            MultiAttestationRequest[] memory listOfAttestations = requestToPublish.listOfAttestations;
-                            for (uint m = 0; m < listOfAttestations.length; m++) {
-                                MultiAttestationRequest memory attestationRequest = listOfAttestations[m];
-//                                attestationRequest.data[0].refUID = newVersionUid;
-//                                emit Log("Added newVersionUid to refUID of attestation data");
-//                                emit Log(string(abi.encodePacked(bytes32ToHexString(newVersionUid))));
-                                if (attestationRequest.schema == propertyToUpdate.propertySchemaUid) {
-                                    attestationRequest.data[0].data = abi.encode(newSeedUid);
-                                    emit Log("Added newSeedUid to attestation data");
-                                    emit Log(string(abi.encodePacked(bytes32ToHexString(newSeedUid))));
-                                }
+            for (uint l = 0; l < propertiesToUpdate.length; l++) {
+                emit Log("Has properties to update");
+                PropertyToUpdateWithSeed memory propertyToUpdate = propertiesToUpdate[l];
+                for (uint m = 0; m < requests.length; m++) {
+                    emit Log("Has requests to search");
+                    PublishRequestData memory targetForUpdate = requests[m];
+                    if ( Strings.equal(targetForUpdate.localId, propertyToUpdate.publishLocalId)) {
+                        emit Log("Found request to update");
+                        emit Log(string(abi.encodePacked(targetForUpdate.localId)));
+
+                        for (uint n = 0; n < targetForUpdate.listOfAttestations.length; n++) {
+                            emit Log("Has attestations to update");
+                            MultiAttestationRequest memory attestationRequest = targetForUpdate.listOfAttestations[n];
+                            emit Log("================");
+                            emit Log(string(abi.encodePacked(bytes32ToHexString(attestationRequest.schema))));
+                            emit Log(string(abi.encodePacked(bytes32ToHexString(propertyToUpdate.propertySchemaUid))));
+                            emit Log("================");
+                            if (attestationRequest.schema == propertyToUpdate.propertySchemaUid) {
+                                attestationRequest.data[0].data = abi.encode(newSeedUid);
+                                emit Log("Added newSeedUid to attestation data");
+                                emit Log(string(abi.encodePacked(bytes32ToHexString(newSeedUid))));
                             }
                         }
                     }

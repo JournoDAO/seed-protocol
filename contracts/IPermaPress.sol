@@ -8,6 +8,12 @@ struct PropertyToUpdateWithSeed {
     bytes32 propertySchemaUid;
 }
 
+struct QueuedUpdate {
+    string publishLocalId;
+    bytes32 propertySchemaUid;
+    bytes32 createdSeedUid;
+}
+
 struct PublishRequestData {
     string localId;
     bytes32 seedUid;
