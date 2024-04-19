@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "./IEAS_PermaPress.sol";
+import "./IEAS_SeedProtocol.sol";
+
+/// @notice A struct representing ECDSA signature data.
+struct Signature {
+    uint8 v; // The recovery ID.
+    bytes32 r; // The x-coordinate of the nonce R.
+    bytes32 s; // The signature data.
+}
 
 struct PropertyToUpdateWithSeed {
     string publishLocalId;
@@ -30,7 +37,12 @@ struct PublishReturnData {
     bytes32 versionUid;
 }
 
+struct CreatedAttestationResult {
+    bytes32 schemaUid;
+    bytes32 attestationUid;
+}
 
-interface IPermaPress {
+
+interface ISeedProtocol {
 
 }

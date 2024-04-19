@@ -11,7 +11,7 @@ struct SchemaRecord {
     string schema; // Custom specification of the schema (e.g., an ABI).
 }
 
-interface ISchemaRegistry_PermaPress {
+interface ISchemaRegistry_SeedProtocol {
 
     /// @notice Submits and reserves a new schema
     /// @param schema The schema data schema.

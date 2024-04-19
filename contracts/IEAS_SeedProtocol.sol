@@ -23,7 +23,7 @@ struct MultiAttestationRequest {
     AttestationRequestData[] data; // The arguments of the attestation request.
 }
 
-interface IEAS_PermaPress {
+interface IEAS_SeedProtocol {
 
     /// @notice Attests to a specific schema.
     /// @param request The arguments of the attestation request.

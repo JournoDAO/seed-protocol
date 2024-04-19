@@ -23,15 +23,6 @@ const config: HardhatUserConfig = {
       chainId: 1337,
       allowUnlimitedContractSize: true,
     },
-    rinkeby: {
-      url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
-      accounts: [process.env.TEST_ACCOUNT_KEY as string],
-    },
-    polygon_testnet: {
-      url: `https://polygon-mumbai.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
-      accounts: [process.env.TEST_ACCOUNT_KEY as string],
-      gasPrice: 8000000000
-    },
     localhost: {
       url: "http://127.0.0.1:8545/",
       accounts: [
@@ -43,11 +34,11 @@ const config: HardhatUserConfig = {
       chainId: 1337,
       allowUnlimitedContractSize: true,
     },
-    optimism_goerli: {
-      url: "https://goerli.optimism.io",
-      chainId: 420,
+    optimism_sepolia: {
+      url: process.env.OPTIMISM_SEPOLIA_RPC_URL,
+      chainId: 11155420,
       accounts: [
-        process.env.TEST_ACCOUNT_KEY_2 as string
+        process.env.DEV_KEY as string
       ]
     },
   },

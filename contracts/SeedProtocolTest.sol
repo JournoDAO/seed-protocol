@@ -2,14 +2,14 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "./IEAS_PermaPress.sol";
-import {AttestationRequest, MultiAttestationRequest} from "./IEAS_PermaPress.sol";
-import {PublishRequestData, PublishReturnData, PropertyToUpdateWithSeed} from "./IPermaPress.sol";
+import "./IEAS_SeedProtocol.sol";
+import {AttestationRequest, MultiAttestationRequest} from "./IEAS_SeedProtocol.sol";
+import {PublishRequestData, PublishReturnData, PropertyToUpdateWithSeed} from "./ISeedProtocol.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 
-contract PermaPress is OwnableUpgradeable {
-    IEAS_PermaPress public eas;
+contract SeedProtocolTest is OwnableUpgradeable {
+    IEAS_SeedProtocol public eas;
 
     event Log(string message);
     event PublishResult(string jsonResult);
@@ -17,7 +17,7 @@ contract PermaPress is OwnableUpgradeable {
     function initialize(
         address _eas
     ) public initializer {
-        eas = IEAS_PermaPress(_eas);
+        eas = IEAS_SeedProtocol(_eas);
     }
 
     function createSeed(bytes32 schemaUid, bool revocable) public payable returns (bytes32) {

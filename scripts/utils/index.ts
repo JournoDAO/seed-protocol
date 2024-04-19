@@ -17,6 +17,7 @@ import {
   PropertyInfo,
   SchemaUidKey
 }                   from '../types'
+import { testPublishRequestData }                              from './test_data'
 
 
 const storageProvider: PropertyInfo[] = [
@@ -472,17 +473,30 @@ export const isString = (value: DataFnParams): value is string => {
 }
 
 export const createSeed = async ( permaPress: Contract, schemaUid: string, schemaTypeFormat: 'bytes32' | 'uint8',): Promise<string> => {
-  const createSeedMethod = permaPress.getFunction(`createSeed(bytes32,bool)`);
+  // const createSeedMethod = permaPress.getFunction(`createSeed(bytes32,bool)`);
+  //
+  // if (!createSeedMethod) {
+  //   throw new Error('Function fragment not found');
+  // }
 
-  if (!createSeedMethod) {
-    throw new Error('Function fragment not found');
-  }
 
-  const uint8Transaction = await createSeedMethod.send(schemaUid, true);
+  // const transaction = await createSeedMethod.send(schemaUid, true, {
+  //   value: BigInt(0),
+  //   // gasLimit: BigInt(1022881482n),
+  //   gasLimit: 30000000n,
+  // });
 
-  // console.log(uint8Transaction)
+  console.log('Calling createSeed with schemaUid: ', schemaUid)
 
-  const receipt = await uint8Transaction.wait();
+  const result = await permaPress.createSeed(schemaUid, true)
+
+  const receipt = await result.wait()
+
+  // console.log('===== done =====')
+  // console.log(done)
+  // console.log('===== /done =====')
+
+  // const receipt = await transaction.wait();
 
   if (!receipt) {
     throw new Error('Transaction failed');
@@ -495,15 +509,17 @@ export const createSeed = async ( permaPress: Contract, schemaUid: string, schem
   let attestationUid = ''
 
   for (const log of receipt.logs) {
+    // attestationUid = log.data
     if (log.args) {
       console.log(permaPress.interface.parseLog(log)?.args)
       const args = permaPress.interface.parseLog(log)?.args.toArray()
       if (args && args.length > 0) {
         for (let i = 0; i < args.length; i++) {
           const value = args[i]
-            console.log(`${value} length is ${value.length}`)
-            if (value.length === 64) {
-              attestationUid = value
+          console.log(`${value} length is ${value.length}`)
+          console.log('Array.isArray(value)', Array.isArray(value))
+            if (Array.isArray(value) && value[1].length === 66) {
+              attestationUid = value[1]
             }
         }
       }

@@ -142,7 +142,7 @@ export type PropertyData = {
 }
 
 export type ValuesStore = {
-  permaPress?: Contract
+  seedProtocol?: Contract
   schemaRegistry?: SchemaRegistry
   schemaRegistryAddress?: string
   easAddress?: string
@@ -217,21 +217,21 @@ export const deployToLocalHardhat = async (): Promise<ValuesStore> => {
   console.log(`postSchemaUid: ${postSchemaUid}`)
   console.log(`versionSchemaUid: ${versionSchemaUid}`)
 
-  // Deploy PermaPress
-  const PermaPress = await ethers.getContractFactory('PermaPress');
-  const permaPress = await upgrades.deployProxy(PermaPress, [
+  // Deploy SeedProtocol
+  const SeedProtocol = await ethers.getContractFactory('SeedProtocol');
+  const seedProtocol = await upgrades.deployProxy(SeedProtocol, [
     easContractDeployed.target,
  ], { initializer: 'initialize' });
 
-  if (!permaPress) {
-    throw new Error('PermaPress not deployed');
+  if (!seedProtocol) {
+    throw new Error('SeedProtocol not deployed');
   }
 
-  await permaPress.waitForDeployment();
+  await seedProtocol.waitForDeployment();
 
-  console.log('PermaPress deployed to:', permaPress.target);
-  const identitySeedUid = await createSeed(permaPress, identitySchemaUid, 'bytes32')
-  const postSeedUid = await createSeed(permaPress, postSchemaUid, 'bytes32')
+  console.log('SeedProtocol deployed to:', seedProtocol.target);
+  const identitySeedUid = await createSeed(seedProtocol, identitySchemaUid, 'bytes32')
+  const postSeedUid = await createSeed(seedProtocol, postSchemaUid, 'bytes32')
 
   console.log(`identityAttestationUid: ${identitySeedUid}`)
   console.log(`postSeedUid: ${postSeedUid}`)
@@ -280,148 +280,9 @@ export const deployToLocalHardhat = async (): Promise<ValuesStore> => {
     identitySchemaUid,
     postSchemaUid,
     versionSchemaUid,
-    permaPress,
-    identitySeedUid: `0x${identitySeedUid}`,
-    postSeedUid: `0x${postSeedUid}`,
-    modelUids,
-  }
-}
-
-export const deployToLocalHardhatOld = async (valuesStore: ValuesStore): Promise<ValuesStore> => {
-
-  let {
-    schemaRegistry,
-    schemaRegistryAddress,
-    easAddress,
-    eas,
-    identitySchemaUid,
-    versionSchemaUid,
-    nameASchemaUid,
+    seedProtocol,
     identitySeedUid,
-    displayNameSchemaUid,
-    profileSchemaUid,
-    uriSchemaUid,
-    labelSchemaUid,
-    linkSchemaUid,
-    identityUids,
-    modelUids,
-    permaPress,
-  } = valuesStore
-
-  identityUids = {
-    display_name: null,
-    profile: null,
-    avatar_image_uri: null,
-    links: null,
-    label: null,
-    uri: null,
-  }
-
-  // Deploy SchemaRegistry
-  const schemaRegistryContract = await ethers.getContractFactory('SchemaRegistry') as SchemaRegistry__factory;
-  const schemaRegistryDeployed = await schemaRegistryContract.deploy();
-
-  await schemaRegistryContract.getDeployTransaction()
-
-  schemaRegistryAddress = await schemaRegistryDeployed.getAddress();
-
-  schemaRegistry = new SchemaRegistry(schemaRegistryAddress);
-
-  // Deploy EAS
-  const easContract = await ethers.getContractFactory('EAS') as EAS__factory;
-  const easContractDeployed = await easContract.deploy(schemaRegistryAddress);
-
-  easAddress = await easContractDeployed.getAddress();
-
-  eas = new EAS(easAddress);
-
-  const [signer] = await ethers.getSigners();
-
-  schemaRegistry.connect(signer);
-  eas.connect(signer);
-
-  // Create NameASchema schema
-  nameASchemaUid = await getUid(schemaRegistry, nameASchemaDefEncoded)
-
-  modelUids = await processModelSchema({
-    modelSchema,
-    schemaRegistry,
-    nameASchemaUid,
-    eas,
-  });
-  console.log(modelUids)
-
-  // Create Identity schema
-  identitySchemaUid = await getUid(schemaRegistry, identitySchemaDefEncoded)
-
-  // Create Content schema
-  // contentSchemaUid = await getUid(schemaRegistry, postSchemaDefEncoded)
-
-  // Create Version schema
-  versionSchemaUid = await getUid(schemaRegistry, versionSchemaDefEncoded)
-
-  console.log(`nameASchemaUid: ${nameASchemaUid}`)
-  console.log(`identitySchemaUid: ${identitySchemaUid}`)
-  // console.log(`contentSchemaUid: ${contentSchemaUid}`)
-  console.log(`versionSchemaUid: ${versionSchemaUid}`)
-
-  // Deploy PermaPress
-  const PermaPress = await ethers.getContractFactory('PermaPress');
-  permaPress = await upgrades.deployProxy(PermaPress, [
-    versionSchemaUid,
-    identitySchemaUid,
-    // contentSchemaUid,
-    versionSchemaDefinition,
-    identitySchemaDefinition,
-    postSchemaDefinition,
-    schemaRegistryDeployed.target,
-    easContractDeployed.target,
- ], { initializer: 'initialize' });
-
-  if (!permaPress) {
-    throw new Error('PermaPress not deployed');
-  }
-
-  await permaPress.waitForDeployment();
-
-  console.log('PermaPress deployed to:', permaPress.target);
-   identitySeedUid      = await createSeed(permaPress, identitySchemaUid, 'bytes32')
-  // contentAttestationUid = await createSeed(permaPress, SchemaTypes.Content , 'uint8')
-
-  console.log(`identityAttestationUid: ${identitySeedUid}`)
-  // console.log(`contentAttestationUid: ${contentAttestationUid}`)
-
-  displayNameSchemaUid = await getUid(schemaRegistry, displayNameSchemaDefEncoded)
-  profileSchemaUid = await getUid(schemaRegistry, profileSchemaDefEncoded)
-  uriSchemaUid = await getUid(schemaRegistry, uriSchemaDefEncoded)
-  labelSchemaUid = await getUid(schemaRegistry, labelSchemaDefEncoded)
-  linkSchemaUid = await getUid(schemaRegistry, linkSchemaDefEncoded)
-
-  identityUids.display_name = displayNameSchemaUid
-  identityUids.profile = profileSchemaUid
-  identityUids.avatar_image_uri = uriSchemaUid
-  identityUids.link = linkSchemaUid
-  identityUids.label = labelSchemaUid
-  identityUids.uri = uriSchemaUid
-
-  return {
-    permaPress,
-    schemaRegistry,
-    schemaRegistryAddress,
-    easAddress,
-    eas,
-    identitySchemaUid,
-    // contentSchemaUid,
-    versionSchemaUid,
-    nameASchemaUid,
-    // contentAttestationUid,
-    // identitySeedUid: identityAttestationUid,
-    displayNameSchemaUid,
-    profileSchemaUid,
-    uriSchemaUid,
-    labelSchemaUid,
-    linkSchemaUid,
-    identityUids,
+    postSeedUid,
     modelUids,
   }
 }
