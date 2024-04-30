@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "./IEAS_SeedProtocol.sol";
+import {Signature, MultiAttestationRequest} from "./IEAS.sol";
 
-/// @notice A struct representing ECDSA signature data.
-struct Signature {
-    uint8 v; // The recovery ID.
-    bytes32 r; // The x-coordinate of the nonce R.
-    bytes32 s; // The signature data.
+struct CreateSeedRequest {
+    bytes32 schemaUid;
+    bool revocable;
+    Signature signature;
 }
 
 struct PropertyToUpdateWithSeed {

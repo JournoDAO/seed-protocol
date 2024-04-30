@@ -2,23 +2,58 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "./IEAS_SeedProtocol.sol";
-import {AttestationRequest, MultiAttestationRequest} from "./IEAS_SeedProtocol.sol";
-import {PublishRequestData, PublishReturnData, PropertyToUpdateWithSeed, CreatedAttestationResult} from "./ISeedProtocol.sol";
+import "@ethereum-attestation-service/eas-contracts/contracts/IEAS.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "@ethereum-attestation-service/eas-contracts/contracts/IEAS.sol";
+import "@ethereum-attestation-service/eas-contracts/contracts/eip712/proxy/EIP712Proxy.sol";
+
+struct CreateSeedRequest {
+    bytes32 schemaUid;
+    bool revocable;
+    Signature signature;
+}
+
+struct PropertyToUpdateWithSeed {
+    string publishLocalId;
+    bytes32 propertySchemaUid;
+}
+
+struct QueuedUpdate {
+    string publishLocalId;
+    bytes32 propertySchemaUid;
+    bytes32 createdSeedUid;
+}
+
+struct PublishRequestData {
+    string localId;
+    bytes32 seedUid;
+    bytes32 seedSchemaUid;
+    bytes32 versionUid;
+    bytes32 versionSchemaUid;
+    bool seedIsRevocable;
+    MultiAttestationRequest[] listOfAttestations;
+    PropertyToUpdateWithSeed[] propertiesToUpdate;
+}
+
+struct PublishReturnData {
+    bytes32 seedUid;
+    bytes32 versionUid;
+}
+
+struct CreatedAttestationResult {
+    bytes32 schemaUid;
+    bytes32 attestationUid;
+}
 
 
 contract SeedProtocol is OwnableUpgradeable {
-    IEAS_SeedProtocol public eas;
-
+    IEAS private _eas;
     event CreatedAttestation(CreatedAttestationResult result);
     event SeedPublished(bytes returnedDataFromEAS);
     event Log(string message);
 
-    function initialize(
-        address _eas
-    ) public initializer {
-        eas = IEAS_SeedProtocol(_eas);
+    function initialize(IEAS eas) public initializer {
+        _eas = eas;
     }
 
     function createSeed(bytes32 schemaUid, bool revocable) public payable returns (bytes32) {
@@ -38,7 +73,7 @@ contract SeedProtocol is OwnableUpgradeable {
             data: seedData
         });
 
-        bytes32 seedUid = eas.attest(seedRequest);
+        bytes32 seedUid = _eas.attest(seedRequest);
 
         require(seedUid != bytes32(0), "Failed to create seed with EAS");
 
@@ -67,7 +102,7 @@ contract SeedProtocol is OwnableUpgradeable {
             data: versionData
         });
 
-        bytes32 versionUid = eas.attest(versionRequest);
+        bytes32 versionUid = _eas.attest(versionRequest);
 
         require(versionUid != bytes32(0), "Failed to create version with EAS");
 
@@ -130,9 +165,9 @@ contract SeedProtocol is OwnableUpgradeable {
             }
 
             // Call multiAttest with updated listOfAttestations
-            (bool success, bytes memory returnedData) = address(eas).call{ value: msg.value }(
+            (bool success, bytes memory returnedData) = address(_eas).call{ value: msg.value }(
                 abi.encodeWithSelector(
-                    eas.multiAttest.selector,
+                    _eas.multiAttest.selector,
                     requestToPublish.listOfAttestations
                 )
             );
